@@ -31,6 +31,7 @@ const MoneyCounter = '9'
 const MenuBg = '7'
 const Back = '6'
 const SelCar = '5'
+const GarageFloor = '4'
 
 
 setLegend(
@@ -254,9 +255,9 @@ DDDDDDDDDDDDDDD4` ],
 0000000000000000
 0000000000000000
 0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000` ],
+LL000LL000LL000L
+LLL0LLLL0LLLL0LL
+LLLLLLLLLLLLLLLL` ],
 
   [ Buy, bitmap`
 .....222222.....
@@ -360,18 +361,35 @@ LLLL0000LLLL0000
 ................
 ................
 ................` ],
+  [ GarageFloor, bitmap`
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LL0LLLLLLLLLLLLL
+L000LLLLLLLLLLLL
+L00LLLLLLLLLLLLL
+L0LLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLL00L
+LLLLLLLLLLLLL0LL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL` ],
 )
 
 var inMenu = true; 
 var inGarage = false; 
 var money = 0; 
 var selected_car = 0; 
+var carX = 3; 
 
 var selecting = 0; 
 var IsFirstTime = true;
 
 var cars = [Blank_car,Blue_Car,Green_Car,Red_Car,Purple_car];
-var objects = []; //this is ehre all moving object will be placed 
 
 setSolids([Guard_rail,Hole,Traffic_cone]);
 
@@ -379,15 +397,15 @@ setSolids([Guard_rail,Hole,Traffic_cone]);
 let level = 2;
 const levels = [
   map`
-8777777
-7w7b7g7
-7j77777
-7r7p767
-7777777`,
+9999999
+4w4b4g4
+4j44444
+4r4p464
+.......`,
   map`
 9999999
 kslllsk
-ksthlsk
+kstltsk
 kslllsk
 kslllsk`,
   map`
@@ -412,17 +430,24 @@ onInput("a", () => {
     updateGarage(-1);
     return;
   }
+  if(carX-1 < 2) return; 
+  carX-=1;
+  updateCar(); 
 })
 
-onInput("d", () => {
+onInput("l", () => {
   if(inMenu){
     selecting = 1; 
     updateIconMenu();
+    return;
   }
   if(inGarage){
     updateGarage(1);
     return;
   }
+  if(carX+1 > 4) return; 
+  carX+=1;
+  updateCar(); 
 })
 
 onInput("w", () => {
@@ -442,6 +467,10 @@ afterInput(() => {
 })
 
 function FirstGenGame(){
+  addSprite(3,4,cars[selected_car]);
+  clearText();
+  addSprite(0,0,Coin);
+  addText(money.toString(), { x: 3, y: 2, color: color`6` })
   
 }
 
@@ -451,7 +480,7 @@ function FirstGenGarage(){
   updateGarage(0);
   setSelected();
   clearText();
-  addText("Your Garage", { x: 4, y: 1, color: color`2` })
+  addText("Your Garage", { x: 5, y: 1, color: color`2` })
   selecting = selected_car;
 }
 
@@ -467,40 +496,36 @@ function FirstGenMenu(){
 }
 
 function handleChange(){
-  console.log("level obtained " + level)
   if(level === 0){
-    console.log("level was 0 so it's garage (logical)")
     inGarage = true;
     inMenu = false;
   }
   else if(level === 1){
     inGarage = false;
     inMenu = false;
-    console.log("level was 1 so it's game (logical)")
   }else{
     inGarage = false;
     inMenu = true;
     selecting = 0;
-    console.log("level was 2 so it's menu (logical)")
   }
   
   
   if(inMenu){
-    console.log("going menu")
+    setBackground(MenuBg);
     selecting = 0; 
     FirstGenMenu();
     return;
   }
   if(inGarage){
-    console.log("going garage")
     FirstGenGarage();
+    setBackground(GarageFloor);
     return;
   }
   FirstGenGame();
+  setBackground(Road_Lane);
 }
 
 function setSelected(){
-  console.log(selected_car)
   switch(selected_car){
     case 0:
       addSprite(1,1,SelCar);
@@ -524,7 +549,6 @@ function setSelected(){
 
     default:
       level = 2; 
-      console.log("i reached this point")
       setMap(levels[level]);
       handleChange();
       break;
@@ -549,7 +573,6 @@ function updateGarage(direction){
   clearTile(PointerPos[0].x, PointerPos[0].y);
   
   selecting +=direction; 
-  console.log(selecting)
   switch(selecting){
     case 0:
       addSprite(1,2,Pointer);
@@ -580,7 +603,6 @@ function updateGarage(direction){
   function to make the pointer snap in the two options
 */
 function updateIconMenu(){
-  console.log(selecting);
   var PointerPos = getAll(Pointer);
   clearTile(PointerPos[0].x, PointerPos[0].y);
   
@@ -591,6 +613,12 @@ function updateIconMenu(){
   addSprite(4,2,Pointer);
 }
 
+function updateCar(){
+  console.log("car x = " +carX);
+  var prevPos = getFirst(cars[selected_car]);
+  clearTile(prevPos.x,prevPos.y);
+  addSprite(carX,4,cars[selected_car]);
+}
 
 function select(){
   IsFirstTime = true; 
@@ -599,9 +627,18 @@ function select(){
   setMap(levels[level]);
   handleChange();
 }
+
 /*
   game loop
 */
+
+var gameLoop = setInterval(() => {
+  if(!(level == 1)){}
+  else{
+    updateCar(); 
+  }
+}, 500);
+
 
 if(!inMenu){
     
