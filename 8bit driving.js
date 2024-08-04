@@ -4,7 +4,7 @@
 @tags: ['simulation','driving']
 @addedOn: 2024-00-00
 */
-
+const player = '8'
 
 //different cars 
 
@@ -27,9 +27,30 @@ const Buy = 'v'
 const Play = 'y'
 const Shop = 'x'
 const Pointer = 'j'
+const MoneyCounter = '9'
+const MenuBg = '7'
+const Back = '6'
 
 
 setLegend(
+  [ player, bitmap`
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................` ],
+  
   [ Blank_car, bitmap`
 ................
 ......L616L.....
@@ -168,37 +189,37 @@ LL11LLLLLLLLLLLL
 LLLLLLLLL1LLLLLL
 LLLLLLLLLLLLLLLL` ],
   [ Coin, bitmap`
-...9999999CCC...
-..96666666666C..
-.966CCC966C966C.
-966C26666666966C
-96C266666666696C
-96C666666666696C
-969666226666696C
-969666222666696C
-966666622266696C
-966666662266696C
-C66666666666296C
-C66666666662296C
-C66966666622966C
-.C6699CCCC9966C.
-..C6666666666C..
-...CCCCCCCCCC...` ],
+................
+................
+....CCC9CCC9....
+...C666666669...
+..C66CC9622669..
+..C6C666666269..
+..969666666669..
+..969662666669..
+..C66666266669..
+..C62666662969..
+..C62666622C69..
+..C6626699C669..
+...9666666669...
+....99CCCC99....
+................
+................` ],
   [ Traffic_cone, bitmap`
 ................
-.......LL.......
-......L92L......
-......L21L......
-......L9CL......
-.....L2CC2L.....
-.....L2221L.....
-.....L911CL.....
-....L299CC2L....
-....L1222210....
-....L9111190....
-...L999999CC0...
-...L9CCCCCCC0...
-....LL000000....
+................
+................
+................
+.......1L.......
+.......L0.......
+......19C0......
+......L220......
+.....129C10.....
+.....L921C0.....
+....129CCC10....
+....L92111C0....
+....09CCCCC0....
+.....000000.....
 ................
 ................` ],
   [ Grass, bitmap`
@@ -218,18 +239,143 @@ DDD8D4DD4DD765DD
 DD86HDDDD4DD5DDD
 DDDHDDDDD4DDDDD4
 DDDDDDDDDDDDDDD4` ],
+  [ MoneyCounter, bitmap`
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000` ],
+
+  [ Buy, bitmap`
+.....222222.....
+..222333333222..
+.23333C99C33332.
+2333CL9269LC3332
+23CCC196291CCC32
+3CL111L99L111LC3
+3L1LLLLLLLLLL1L3
+211L00000000L112
+21L0000000000L12
+21L0004DDD000L12
+21L0047575D00L12
+21L0L45757DL0L12
+21L0DDDDDDDD0L12
+21L0F644446F0L12
+21L0DDDLLDDD0L12
+21L0LL0000LL0L12` ],
+  [ Play, bitmap`
+...2222222222...
+..2DDDDDD44442..
+.2DDDDD44444442.
+2DDDD44444444442
+2DDD020244424442
+2DDDL02020204442
+2DDD120202024442
+2DDD102020204442
+2DDD144402044442
+2DDD144444444442
+2DDDL44444444442
+2DDD044444444442
+2DDD0DD4444444D2
+.2DDDDDDDD444D2.
+..2DDDDDDDDDD2..
+...2222222222...` ],
+  [ Pointer, bitmap`
+.......2........
+......212.......
+.....21112......
+.....211L2......
+....2LLLLL2.....
+.....22222......
+....2000002.....
+...20LL1LL02....
+..20L1L1L1L02...
+..20LL1113C02...
+..20111011102...
+..20LL1113C02...
+..20L1L1C1L02...
+...20LL1LL02....
+....2000002.....
+.....22222......` ],
+  [ MenuBg, bitmap`
+LLLL0000LLLL0000
+LLLL0000LLLL0000
+LLLL0000LLLL0000
+LLLL0000LLLL0000
+0000LLLL0000LLLL
+0000LLLL0000LLLL
+0000LLLL0000LLLL
+0000LLLL0000LLLL
+LLLL0000LLLL0000
+LLLL0000LLLL0000
+LLLL0000LLLL0000
+LLLL0000LLLL0000
+0000LLLL0000LLLL
+0000LLLL0000LLLL
+0000LLLL0000LLLL
+0000LLLL0000LLLL` ],
+  [ Back, bitmap`
+.....000........
+....0230........
+...023300000....
+..023333399C0...
+.02333333339C0..
+..03333333399C0.
+...0333000339C0.
+....0330..039C0.
+.....000..039C0.
+........00399C0.
+...00000339CC0..
+...03333399CC0..
+...0933999C00...
+...0C99CC00.....
+...000000.......
+................` ],
 )
 
-setSolids([])
+var inMenu = true; 
+var money = 0; 
+var selected_car = 0; 
 
-let level = 0
+var selecting = 0; 
+var IsFirstTime = true;
+
+var cars = [Blank_car,Blue_Car,Green_Car,Red_Car,Purple_car];
+var objects = []; //this is ehre all moving object will be placed 
+
+setSolids([Guard_rail,Hole,Traffic_cone]);
+
+//the map is still but objects are updated and generated on screen.
+let level = 2;
 const levels = [
   map`
+8777777
+7w7b7g7
+7j77777
+7r7p767
+7777777`,
+  map`
+9999999
 kslllsk
+ksthlsk
 kslllsk
-kslllsk
-kslllsk`
-]
+kslllsk`,
+  map`
+7777777
+77v7y77
+87j7777`,
+];
 
 setMap(levels[level])
 
@@ -237,10 +383,76 @@ setPushables({
   [ player ]: []
 })
 
-onInput("s", () => {
-  getFirst(player).y += 1
+onInput("a", () => {
+  if(inMenu){
+    selecting = 0; 
+    updateIcon();
+  }
 })
+
+onInput("d", () => {
+  if(inMenu){
+    selecting = 1; 
+    updateIcon();
+  }
+})
+
+onInput("w", () => {
+  if(inMenu){
+    select();
+  }
+})
+
 
 afterInput(() => {
   
 })
+
+function FirstGenGame(){
+  
+}
+
+function FirstGenGarage(){
+  
+}
+
+/*
+  function create ui components in the menu
+*/
+function FirstGenMenu(){
+  if(!IsFirstTime) return; 
+
+  addText("8bit Driving", { x: 4, y: 1, color: color`2` })
+  setBackground(MenuBg);
+  IsFirstTime = false; 
+}
+
+/*
+  function to make the pointer snap in the two options
+*/
+function updateIcon(){
+  var PointerPos = getAll(Pointer);
+  clearTile(PointerPos[0].x, PointerPos[0].y);
+  
+  if(selecting === 0){
+      addSprite(2,2,Pointer);
+      return;
+  }
+  addSprite(4,2,Pointer);
+}
+
+
+function select(){
+  IsFirstTime = true; 
+  level = selecting;
+  setMap(levels[level]);
+}
+/*
+  game loop
+*/
+
+if(!inMenu){
+    
+}else{
+  FirstGenMenu();
+}
