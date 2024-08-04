@@ -30,6 +30,7 @@ const Pointer = 'j'
 const MoneyCounter = '9'
 const MenuBg = '7'
 const Back = '6'
+const SelCar = '5'
 
 
 setLegend(
@@ -342,9 +343,27 @@ LLLL0000LLLL0000
 ...0C99CC00.....
 ...000000.......
 ................` ],
+  [ SelCar, bitmap`
+................
+................
+................
+................
+................
+................
+2..............2
+22............22
+22............22
+2..............2
+................
+................
+................
+................
+................
+................` ],
 )
 
 var inMenu = true; 
+var inGarage = false; 
 var money = 0; 
 var selected_car = 0; 
 
@@ -386,20 +405,34 @@ setPushables({
 onInput("a", () => {
   if(inMenu){
     selecting = 0; 
-    updateIcon();
+    updateIconMenu();
+    return;
+  }
+  if(inGarage){
+    updateGarage(-1);
+    return;
   }
 })
 
 onInput("d", () => {
   if(inMenu){
     selecting = 1; 
-    updateIcon();
+    updateIconMenu();
+  }
+  if(inGarage){
+    updateGarage(1);
+    return;
   }
 })
 
 onInput("w", () => {
   if(inMenu){
     select();
+    return;
+  }
+
+  if(inGarage){
+    selectCar();
   }
 })
 
@@ -413,7 +446,13 @@ function FirstGenGame(){
 }
 
 function FirstGenGarage(){
-  
+  setMap(levels[level]);
+  selecting = selected_car;
+  updateGarage(0);
+  setSelected();
+  clearText();
+  addText("Your Garage", { x: 4, y: 1, color: color`2` })
+  selecting = selected_car;
 }
 
 /*
@@ -421,16 +460,127 @@ function FirstGenGarage(){
 */
 function FirstGenMenu(){
   if(!IsFirstTime) return; 
-
+  selecting = 0;
   addText("8bit Driving", { x: 4, y: 1, color: color`2` })
   setBackground(MenuBg);
   IsFirstTime = false; 
 }
 
+function handleChange(){
+  console.log("level obtained " + level)
+  if(level === 0){
+    console.log("level was 0 so it's garage (logical)")
+    inGarage = true;
+    inMenu = false;
+  }
+  else if(level === 1){
+    inGarage = false;
+    inMenu = false;
+    console.log("level was 1 so it's game (logical)")
+  }else{
+    inGarage = false;
+    inMenu = true;
+    selecting = 0;
+    console.log("level was 2 so it's menu (logical)")
+  }
+  
+  
+  if(inMenu){
+    console.log("going menu")
+    selecting = 0; 
+    FirstGenMenu();
+    return;
+  }
+  if(inGarage){
+    console.log("going garage")
+    FirstGenGarage();
+    return;
+  }
+  FirstGenGame();
+}
+
+function setSelected(){
+  console.log(selected_car)
+  switch(selected_car){
+    case 0:
+      addSprite(1,1,SelCar);
+      break;
+      
+    case 1:
+      addSprite(3,1,SelCar);
+      break;
+
+    case 2:
+      addSprite(5,1,SelCar);
+      break;
+
+    case 3:
+      addSprite(1,3,SelCar);
+      break;
+
+    case 4:
+      addSprite(3,3,SelCar);
+      break;
+
+    default:
+      level = 2; 
+      console.log("i reached this point")
+      setMap(levels[level]);
+      handleChange();
+      break;
+  }
+}
+
+function selectCar(){
+  if(selecting == 5){
+      level = 2;
+      setMap(levels[level]);
+      handleChange();
+      return;
+  }
+  selected_car = selecting;
+  FirstGenGarage();
+}
+
+function updateGarage(direction){
+  if(selecting+direction < 0 || selecting+direction>5 ) return; 
+
+  var PointerPos = getAll(Pointer);
+  clearTile(PointerPos[0].x, PointerPos[0].y);
+  
+  selecting +=direction; 
+  console.log(selecting)
+  switch(selecting){
+    case 0:
+      addSprite(1,2,Pointer);
+      break;
+      
+    case 1:
+      addSprite(3,2,Pointer);
+      break;
+
+    case 2:
+      addSprite(5,2,Pointer);
+      break;
+
+    case 3:
+      addSprite(1,4,Pointer);
+      break;
+
+    case 4:
+      addSprite(3,4,Pointer);
+      break;
+
+    default:
+      addSprite(5,4,Pointer);
+      break;
+  }
+}
 /*
   function to make the pointer snap in the two options
 */
-function updateIcon(){
+function updateIconMenu(){
+  console.log(selecting);
   var PointerPos = getAll(Pointer);
   clearTile(PointerPos[0].x, PointerPos[0].y);
   
@@ -445,7 +595,9 @@ function updateIcon(){
 function select(){
   IsFirstTime = true; 
   level = selecting;
+  console.log(level);
   setMap(levels[level]);
+  handleChange();
 }
 /*
   game loop
