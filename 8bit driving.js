@@ -32,7 +32,7 @@ const MenuBg = '7'
 const Back = '6'
 const SelCar = '5'
 const GarageFloor = '4'
-
+const CoinIcon = '3'
 
 setLegend(
   [ player, bitmap`
@@ -205,6 +205,23 @@ LLLLLLLLLLLLLLLL` ],
 ..C6626699C669..
 ...9666666669...
 ....99CCCC99....
+................
+................` ],
+  [ CoinIcon, bitmap`
+................
+....CCC9CCC9....
+...C666666669...
+..C66CC9622669..
+..C6C666666269..
+..969666666669..
+..969662666669..
+..C66666266669..
+..C62666662969..
+..C62666622C69..
+..C6626699C669..
+...9666666669...
+....99CCCC99....
+................
 ................
 ................` ],
   [ Traffic_cone, bitmap`
@@ -380,6 +397,57 @@ LLLLLLLLLLLLLLLL
 LLLLLLLLLLLLLLLL` ],
 )
 
+
+const melody = tune`
+133.33333333333334,
+133.33333333333334: F4~133.33333333333334,
+133.33333333333334: F4~133.33333333333334,
+133.33333333333334: D4~133.33333333333334,
+133.33333333333334: D4~133.33333333333334,
+133.33333333333334: D4~133.33333333333334,
+133.33333333333334,
+133.33333333333334: D4~133.33333333333334,
+133.33333333333334: D4~133.33333333333334,
+133.33333333333334,
+133.33333333333334: F4~133.33333333333334,
+133.33333333333334: F4~133.33333333333334,
+133.33333333333334: E4~133.33333333333334,
+133.33333333333334,
+133.33333333333334: F4~133.33333333333334,
+133.33333333333334,
+133.33333333333334: G4~133.33333333333334,
+133.33333333333334,
+133.33333333333334: G4~133.33333333333334,
+133.33333333333334: A4~133.33333333333334,
+133.33333333333334: A4~133.33333333333334,
+133.33333333333334: G4~133.33333333333334,
+133.33333333333334,
+133.33333333333334: G4~133.33333333333334,
+133.33333333333334: G4~133.33333333333334,
+133.33333333333334: F4~133.33333333333334,
+133.33333333333334: G4~133.33333333333334,
+133.33333333333334: G4~133.33333333333334,
+133.33333333333334: G4~133.33333333333334,
+133.33333333333334,
+133.33333333333334: A4~133.33333333333334,
+133.33333333333334: A4~133.33333333333334`;
+var playbackMelody = playTune(melody, Infinity);
+
+const coinPicked = tune`
+60,
+60: G5/60,
+60: A5-60,
+1740`;
+const conePicked = tune`
+60: C4~60,
+60: F4/60 + C4~60,
+60: E4/60 + C4~60,
+60: E4/60 + C4~60,
+60: E4/60 + C4~60,
+60: E4/60 + C4~60,
+60: C4~60,
+1500`;
+
 var inMenu = true; 
 var inGarage = false; 
 var money = 0; 
@@ -388,6 +456,17 @@ var carX = 3;
 
 var selecting = 0; 
 var IsFirstTime = true;
+
+
+let savedMoney = localStorage.getItem('money');
+if (savedMoney) {
+  money = parseInt(savedMoney, 10);
+}
+
+let savedSelectedCar = localStorage.getItem('selectedCar');
+if (savedSelectedCar) {
+  selected_car = parseInt(savedSelectedCar, 10);
+}
 
 var cars = [Blank_car,Blue_Car,Green_Car,Red_Car,Purple_car];
 
@@ -404,10 +483,10 @@ const levels = [
 .......`,
   map`
 9999999
-kslllsk
-kstltsk
-kslllsk
-kslllsk`,
+ks...sk
+kst.tsk
+ks...sk
+ks...sk`,
   map`
 7777777
 77v7y77
@@ -461,6 +540,22 @@ onInput("w", () => {
   }
 })
 
+var isPlaying = true; 
+onInput("i", () => {
+  if(isPlaying){
+    playbackMelody.end();
+    isPlaying = false;
+    return;
+  }
+
+  playbackMelody = playTune(melody, Infinity);
+  isPlaying = true;
+})
+
+onInput("s", () => {
+  restartGame();
+})
+
 
 afterInput(() => {
   
@@ -469,8 +564,8 @@ afterInput(() => {
 function FirstGenGame(){
   addSprite(3,4,cars[selected_car]);
   clearText();
-  addSprite(0,0,Coin);
-  addText(money.toString(), { x: 3, y: 2, color: color`6` })
+  addSprite(0,0,CoinIcon);
+  addText(money.toString(), { x: 3, y: 2, color: color`6` });
   
 }
 
@@ -480,7 +575,7 @@ function FirstGenGarage(){
   updateGarage(0);
   setSelected();
   clearText();
-  addText("Your Garage", { x: 5, y: 1, color: color`2` })
+  addText("Your Garage", { x: 5, y: 1, color: color`2` });
   selecting = selected_car;
 }
 
@@ -490,7 +585,9 @@ function FirstGenGarage(){
 function FirstGenMenu(){
   if(!IsFirstTime) return; 
   selecting = 0;
-  addText("8bit Driving", { x: 4, y: 1, color: color`2` })
+  addText("8bit Driving", { x: 4, y: 1, color: color`2` });
+  addText("use a w l to move", { x: 2, y: 2, color: color`L` });
+  addText("i to stop music", { x: 3, y: 13, color: color`L` })
   setBackground(MenuBg);
   IsFirstTime = false; 
 }
@@ -628,20 +725,154 @@ function select(){
   handleChange();
 }
 
+var canSpawn = true;
+function spawnObstacle() {
+  if(!canSpawn){
+    canSpawn = true;
+    return
+  }
+  let x = Math.floor(Math.random() * 3) + 2;;
+  let y = 1; 
+  addSprite(x, y, Traffic_cone);
+  canSpawn = false;
+}
+
+function spawnCoins() {
+  if(canSpawn){
+    return;
+  }
+  
+  let x = Math.floor(Math.random() * 3) + 2;;
+  let y = 1; 
+  addSprite(x, y, Coin);
+}
+
+function moveObstacles() {
+  let obstacles = getAll(Traffic_cone);
+
+  for (let i = 0; i < obstacles.length; i++) {
+    obstacles[i].y += 1;
+  }
+}
+
+function moveCoins() {
+  let coins = getAll(Coin);
+
+  for (let i = 0; i < coins.length; i++) {
+    coins[i].y += 1;
+  }
+}
+
+function despawnObstacles() {
+  let obstacles = getAll(Traffic_cone);
+
+  for (let i = 0; i < obstacles.length; i++) {
+   if (obstacles[i].y == 4) {
+     obstacles[i].remove();
+   }
+  }
+}
+
+function despawnCoins() {
+  let coins = getAll(Coin);
+
+  for (let i = 0; i < coins.length; i++) {
+   if (coins[i].y == 4) {
+     coins[i].remove();
+   }
+  }
+}
+
+function checkHit() {
+  let obstacles = getAll(Traffic_cone);
+  let p = getFirst(cars[selected_car]);
+
+  for (let i = 0; i < obstacles.length; i++) {
+    if (obstacles[i].x == p.x && obstacles[i].y == p.y) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function checkHitCoin() {
+  let coins = getAll(Coin);
+  let p = getFirst(cars[selected_car]);
+
+  for (let i = 0; i < coins.length; i++) {
+    if (coins[i].x == p.x && coins[i].y == p.y) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /*
   game loop
 */
 
+var isGameOver = false;
 var gameLoop = setInterval(() => {
   if(!(level == 1)){}
   else{
-    updateCar(); 
+    if(!isGameOver){
+      updateCar(); 
+      despawnObstacles();
+      despawnCoins();
+      moveObstacles();
+      moveCoins();
+    
+      spawnCoins();
+      spawnObstacle();
+
+      if(checkHitCoin()){
+        money+=1;
+        addText(money.toString(), { x: 3, y: 2, color: color`6` })
+        playTune(coinPicked);
+      }
+    
+      if (checkHit()) {
+        isGameOver = true;
+        addText("Game Over!", {
+          x: 5,
+          y: 6,
+          color: color`3`
+        });
+        addText("press s to restart", {
+          x: 1,
+          y: 7,
+          color: color`0`
+        });
+        playTune(conePicked);
+         playbackMelody.end();
+        localStorage.setItem('money', money.toString());
+        localStorage.setItem('selectedCar', selected_car.toString());
+      }
+    }
   }
 }, 500);
 
+function restartGame() {
+  localStorage.setItem('money', money.toString());
+  localStorage.setItem('selectedCar', selected_car.toString());
+  isGameOver = false;
+  clearText();
+  // Clear existing sprites
+  clearTile(3, 4); // Clear the player sprite
+  clearTile(0, 0); // Clear the CoinIcon
 
-if(!inMenu){
-    
-}else{
-  FirstGenMenu();
+  carX = 3; // Reset the player's position
+
+  // Reset game flags and level
+  inMenu = true;
+  inGarage = false;
+  level = 2;
+
+  // Reset the game elements
+  setMap(levels[level]);
+  handleChange();
 }
+
+dFirstGenMenu();
