@@ -3,10 +3,37 @@
 @author: Luca
 @tags: ['simulation','driving']
 @addedOn: 2024-00-00
+
+-----------------------------------------------------------------------------------------------------------------
+ ________  ________  ___  _________        ________  ________  ___  ___      ___ ___  ________   ________     
+|\   __  \|\   __  \|\  \|\___   ___\     |\   ___ \|\   __  \|\  \|\  \    /  /|\  \|\   ___  \|\   ____\    
+\ \  \|\  \ \  \|\ /\ \  \|___ \  \_|     \ \  \_|\ \ \  \|\  \ \  \ \  \  /  / | \  \ \  \\ \  \ \  \___|    
+ \ \   __  \ \   __  \ \  \   \ \  \       \ \  \ \\ \ \   _  _\ \  \ \  \/  / / \ \  \ \  \\ \  \ \  \  ___  
+  \ \  \|\  \ \  \|\  \ \  \   \ \  \       \ \  \_\\ \ \  \\  \\ \  \ \    / /   \ \  \ \  \\ \  \ \  \|\  \ 
+   \ \_______\ \_______\ \__\   \ \__\       \ \_______\ \__\\ _\\ \__\ \__/ /     \ \__\ \__\\ \__\ \_______\
+    \|_______|\|_______|\|__|    \|__|        \|_______|\|__|\|__|\|__|\|__|/       \|__|\|__| \|__|\|_______|
+                                                                                                              
+-----------------------------------------------------------------------------------------------------------------
+
+COMMANDS: 
+A -> move left 
+L -> move right 
+W -> select 
+I -> stop/start Music
+S -> restart game (recommended only to use in case of lost or game bugging).
+
+--------
+NOTE:
+This games saves money progression and the selected car in the local storage of the browser 
+(don't know yet if this will work on the sprig device).
+Hope you will have fun! 
+--------
+
 */
+
 const player = '8'
 
-//different cars 
+//different playable cars 
 
 const Blank_car = 'w'
 const Blue_Car = 'b'
@@ -17,7 +44,7 @@ const Purple_car = 'p'
 //game objects
 const Road_Lane ='l'
 const Guard_rail = 's'
-const Hole = 'h'
+const Hole = 'h'        //coming in a future update 
 const Coin = 'c'
 const Traffic_cone = 't'
 const Grass = 'k'
@@ -32,6 +59,8 @@ const MenuBg = '7'
 const Back = '6'
 const SelCar = '5'
 const GarageFloor = '4'
+const GarageFloor2 = '2'
+const GarageFloor3 = '1'
 const CoinIcon = '3'
 
 setLegend(
@@ -208,7 +237,6 @@ LLLLLLLLLLLLLLLL` ],
 ................
 ................` ],
   [ CoinIcon, bitmap`
-................
 ....CCC9CCC9....
 ...C666666669...
 ..C66CC9622669..
@@ -221,6 +249,7 @@ LLLLLLLLLLLLLLLL` ],
 ..C6626699C669..
 ...9666666669...
 ....99CCCC99....
+................
 ................
 ................
 ................` ],
@@ -395,9 +424,43 @@ LLLLLLLLLLLLL00L
 LLLLLLLLLLLLL0LL
 LLLLLLLLLLLLLLLL
 LLLLLLLLLLLLLLLL` ],
+  [ GarageFloor2, bitmap`
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LL0L00LLLLLLLLLL
+LL000LLLLLLLLLLL
+L000LLLLLLLLLLLL
+L0000LLLLLLLLLLL
+L0000LLLLLLLLLLL
+LL00LLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLL000LL
+LLLLLLLLLL0L1L0L
+LLLLLLLLLL01510L
+LLLLLLLLLL0L1L0L
+LLLLLLLLLLL000LL` ],
+  [ GarageFloor3, bitmap`
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL` ],
 )
 
-
+//sound effects and game sound trak
 const melody = tune`
 133.33333333333334,
 133.33333333333334: F4~133.33333333333334,
@@ -448,8 +511,11 @@ const conePicked = tune`
 60: C4~60,
 1500`;
 
+//flags to understand what the player is watching 
 var inMenu = true; 
 var inGarage = false; 
+
+//game stats and others
 var money = 0; 
 var selected_car = 0; 
 var carX = 3; 
@@ -457,30 +523,34 @@ var carX = 3;
 var selecting = 0; 
 var IsFirstTime = true;
 
-
+//loading preavious money advancement from local storage
 let savedMoney = localStorage.getItem('money');
 if (savedMoney) {
   money = parseInt(savedMoney, 10);
 }
 
+//loading preavious selected car from local storage 
 let savedSelectedCar = localStorage.getItem('selectedCar');
 if (savedSelectedCar) {
   selected_car = parseInt(savedSelectedCar, 10);
 }
 
+//here will be also saved the bought cars in a future update.
+
+//list of the cars of the player
 var cars = [Blank_car,Blue_Car,Green_Car,Red_Car,Purple_car];
 
 setSolids([Guard_rail,Hole,Traffic_cone]);
 
-//the map is still but objects are updated and generated on screen.
+//the maps are still but objects are updated and generated on screen.
 let level = 2;
 const levels = [
   map`
 9999999
-4w4b4g4
-4j44444
-4r4p464
-.......`,
+1w4b2g4
+2j21111
+4r1p462
+1121114`,
   map`
 9999999
 ks...sk
@@ -499,6 +569,8 @@ setPushables({
   [ player ]: []
 })
 
+//input handle 
+//different movements based on the screen the player's in 
 onInput("a", () => {
   if(inMenu){
     selecting = 0; 
@@ -509,7 +581,7 @@ onInput("a", () => {
     updateGarage(-1);
     return;
   }
-  if(carX-1 < 2) return; 
+  if(carX-1 < 2 || isGameOver) return; 
   carX-=1;
   updateCar(); 
 })
@@ -524,11 +596,12 @@ onInput("l", () => {
     updateGarage(1);
     return;
   }
-  if(carX+1 > 4) return; 
+  if(carX+1 > 4 || isGameOver) return; 
   carX+=1;
   updateCar(); 
 })
 
+//selecting 
 onInput("w", () => {
   if(inMenu){
     select();
@@ -540,6 +613,7 @@ onInput("w", () => {
   }
 })
 
+//music controls 
 var isPlaying = true; 
 onInput("i", () => {
   if(isPlaying){
@@ -557,10 +631,7 @@ onInput("s", () => {
 })
 
 
-afterInput(() => {
-  
-})
-
+//fixes the game screen with correct sprites, text and bg
 function FirstGenGame(){
   addSprite(3,4,cars[selected_car]);
   clearText();
@@ -569,6 +640,7 @@ function FirstGenGame(){
   
 }
 
+//fixes the garage screen correct the selected car and the pointer of the player 
 function FirstGenGarage(){
   setMap(levels[level]);
   selecting = selected_car;
@@ -579,9 +651,7 @@ function FirstGenGarage(){
   selecting = selected_car;
 }
 
-/*
-  function create ui components in the menu
-*/
+//function that creates ui components in the menu (text and bla bla) 
 function FirstGenMenu(){
   if(!IsFirstTime) return; 
   selecting = 0;
@@ -592,6 +662,7 @@ function FirstGenMenu(){
   IsFirstTime = false; 
 }
 
+//called every time the screen changes to fix flags and other stuff (could have been done in each single function but it works like this sooo) 
 function handleChange(){
   if(level === 0){
     inGarage = true;
@@ -622,6 +693,7 @@ function handleChange(){
   setBackground(Road_Lane);
 }
 
+// function that fixes the position of the selected car indicator
 function setSelected(){
   switch(selected_car){
     case 0:
@@ -652,6 +724,7 @@ function setSelected(){
   }
 }
 
+//function that sets the selected car
 function selectCar(){
   if(selecting == 5){
       level = 2;
@@ -696,9 +769,8 @@ function updateGarage(direction){
       break;
   }
 }
-/*
-  function to make the pointer snap in the two options
-*/
+//function to make the pointer snap in the two options of the menu 
+
 function updateIconMenu(){
   var PointerPos = getAll(Pointer);
   clearTile(PointerPos[0].x, PointerPos[0].y);
@@ -710,6 +782,7 @@ function updateIconMenu(){
   addSprite(4,2,Pointer);
 }
 
+//update the car x position
 function updateCar(){
   console.log("car x = " +carX);
   var prevPos = getFirst(cars[selected_car]);
@@ -717,6 +790,7 @@ function updateCar(){
   addSprite(carX,4,cars[selected_car]);
 }
 
+//the player selected something so it changes screen
 function select(){
   IsFirstTime = true; 
   level = selecting;
@@ -725,6 +799,7 @@ function select(){
   handleChange();
 }
 
+//spawn of traffic cones and coins in 2 different levels (this avoids the conditions where the coin is over the cone and u die) 
 var canSpawn = true;
 function spawnObstacle() {
   if(!canSpawn){
@@ -747,6 +822,8 @@ function spawnCoins() {
   addSprite(x, y, Coin);
 }
 
+
+//adding "falling" effect 
 function moveObstacles() {
   let obstacles = getAll(Traffic_cone);
 
@@ -763,6 +840,7 @@ function moveCoins() {
   }
 }
 
+//despawn them when reach the end
 function despawnObstacles() {
   let obstacles = getAll(Traffic_cone);
 
@@ -783,6 +861,7 @@ function despawnCoins() {
   }
 }
 
+//check if the player hit a coin or a cone 
 function checkHit() {
   let obstacles = getAll(Traffic_cone);
   let p = getFirst(cars[selected_car]);
@@ -823,10 +902,11 @@ var gameLoop = setInterval(() => {
       despawnCoins();
       moveObstacles();
       moveCoins();
-    
+      
+      
       spawnCoins();
       spawnObstacle();
-
+      
       if(checkHitCoin()){
         money+=1;
         addText(money.toString(), { x: 3, y: 2, color: color`6` })
@@ -835,7 +915,7 @@ var gameLoop = setInterval(() => {
     
       if (checkHit()) {
         isGameOver = true;
-        addText("Game Over!", {
+        addText("you crashed!", {
           x: 5,
           y: 6,
           color: color`3`
@@ -843,8 +923,9 @@ var gameLoop = setInterval(() => {
         addText("press s to restart", {
           x: 1,
           y: 7,
-          color: color`0`
+          color: color`9`
         });
+        //saving all before ending the ga
         playTune(conePicked);
          playbackMelody.end();
         localStorage.setItem('money', money.toString());
@@ -859,13 +940,12 @@ function restartGame() {
   localStorage.setItem('selectedCar', selected_car.toString());
   isGameOver = false;
   clearText();
-  // Clear existing sprites
-  clearTile(3, 4); // Clear the player sprite
-  clearTile(0, 0); // Clear the CoinIcon
+  
+  clearTile(3, 4);
+  clearTile(0, 0);
 
-  carX = 3; // Reset the player's position
+  carX = 3;
 
-  // Reset game flags and level
   inMenu = true;
   inGarage = false;
   level = 2;
@@ -875,4 +955,4 @@ function restartGame() {
   handleChange();
 }
 
-dFirstGenMenu();
+FirstGenMenu();
